@@ -1,9 +1,3 @@
-Vou gerar um `agents.md` **extremamente detalhado**, bilíngue (Português → English), com guias de configuração, padrões de código, estrutura de diretórios expandida e instruções claras para agentes de IA e desenvolvedores. O documento será muito maior e cobrirá todos os aspectos que você mencionou.
-
----
-
-```markdown
-<!-- agents.md – Tenentis OS -->
 <div align="center">
   <h1>🤖 Tenentis OS – Guia do Agente / Agent Guide</h1>
   <p><strong>Documentação essencial para agentes de IA e desenvolvedores</strong></p>
