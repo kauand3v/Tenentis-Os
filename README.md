@@ -802,3 +802,197 @@ sequenceDiagram
     Middleware->>Middleware: Validar Token
     Middleware->>Middleware: Extrair tenant_id + escopo
     Middleware->>PostgreSQL: SET app.current
+
+
+    ---
+
+#  SentinelFlux
+## Observabilidade Reativa e Autocura para Microsserviços
+## Reactive Observability & Self‑Healing for Microservices
+
+> **🇧🇷 Português**  
+> Módulo de observabilidade in‑memory e self‑healing do **Tenentis OS**.  
+> **🇬🇧 English**  
+> In‑memory observability and self‑healing module for **Tenentis OS**.
+
+---
+
+## 📑 Índice / Table of Contents
+- [🇧🇷 Versão em Português](#-versão-em-português)
+  - [Visão Geral](#visão-geral)
+  - [Como Funciona (Arquitetura)](#como-funciona-arquitetura)
+  - [Stack Tecnológica](#stack-tecnológica)
+  - [Funcionalidades de Autocura](#funcionalidades-de-autocura)
+  - [Como Rodar o Projeto (Quickstart)](#como-rodar-o-projeto-quickstart)
+  - [Simulando o Caos (Demonstração)](#simulando-o-caos-demonstração)
+  - [Integração com o Tenentis OS](#integração-com-o-tenentis-os)
+- [🇺🇸 English Version](#-english-version)
+  - [Overview](#overview)
+  - [How It Works (Architecture)](#how-it-works-architecture)
+  - [Tech Stack](#tech-stack)
+  - [Self‑Healing Features](#self-healing-features)
+  - [Getting Started (Quickstart)](#getting-started-quickstart)
+  - [Chaos Engineering Demo](#chaos-engineering-demo)
+  - [Integration with Tenentis OS](#integration-with-tenentis-os)
+
+---
+
+# 🇧🇷 Versão em Português
+
+## Visão Geral
+O **SentinelFlux** é o serviço de **observabilidade reativa e autocura** do ecossistema **Tenentis OS**. Diferente de ferramentas tradicionais que persistem métricas em disco para análise posterior, ele atua via **Stream Processing in‑memory**, analisando telemetria em tempo real e orquestrando **ações de recuperação automáticas** na infraestrutura em milissegundos.
+
+Este módulo foi projetado para **reduzir drasticamente o MTTR** e aplicar conceitos de **SRE e Resiliência Ativa** diretamente nos workers Java, na API Gateway ou em qualquer microsserviço do Tenentis OS.
+
+## Como Funciona (Arquitetura)
+O ciclo de vida de um evento no SentinelFlux segue quatro etapas contínuas:
+
+1. **Vítima (Target API)** – Serviços monitorados (ex: workers Java do Tenentis OS, API Node.js) emitem telemetria de alta frequência (latência, status HTTP, CPU) a cada requisição.
+2. **Stream Engine (Ingestão)** – Os dados são publicados em streams Redis de baixa latência, sem tocar em disco.
+3. **Motor de Regras (Processamento)** – Analisa o fluxo usando janelas deslizantes. Se métricas como P99 de latência ou taxa de erro violarem os SLOs definidos, um alerta de anomalia é gerado.
+4. **Orquestrador (Autocura)** – Consome os alertas e interage programaticamente com a infraestrutura (Docker, Kubernetes) para executar a ação corretiva.
+
+```
+┌─────────────┐     ┌────────────────┐     ┌───────────────┐     ┌──────────────────┐
+│ Target API  │────▶│ Redis Streams  │────▶│  Rule Engine   │────▶│   Orchestrator   │
+│ (Vítima)    │     │ (In‑memory)    │     │ (Sliding Windows)│    │ (Docker SDK)     │
+└─────────────┘     └────────────────┘     └───────────────┘     └──────────────────┘
+```
+
+## Stack Tecnológica
+| Componente            | Tecnologia               | Função |
+|-----------------------|---------------------------|--------|
+| Core / Serviços       | Go (Golang)               | Processamento concorrente de alta performance |
+| Stream Engine         | Redis (Streams & Pub/Sub) | Ingestão e roteamento de eventos com latência mínima |
+| Infraestrutura local  | Docker / Docker Compose   | Gerenciamento de containers |
+| Orquestração          | Docker Engine SDK         | Ações programáticas de autocura (scale, restart) |
+
+## Funcionalidades de Autocura
+- **Scale‑Out Dinâmico** – Provisiona instâncias adicionais quando limites de latência prolongada ou alta carga de CPU são detectados.
+- **Smart Restart** – Reinicia containers travados ao detectar cascatas de erros 500 (sugerindo memory leaks ou deadlocks).
+- **Load Shedding** – Rejeita tráfego não crítico de forma controlada para proteger o core do sistema durante picos extremos.
+
+## Como Rodar o Projeto (Quickstart)
+**Pré‑requisitos:** Docker e Docker Compose instalados.
+
+```bash
+# Clone o repositório principal do Tenentis OS (se ainda não tiver)
+git clone https://github.com/seu-usuario/tenentis-os.git
+cd tenentis-os/sentinelflux
+
+# Suba a infraestrutura do SentinelFlux
+docker-compose up -d
+```
+
+Verifique os logs do orquestrador:
+```bash
+docker logs -f sentinelflux-orchestrator
+```
+
+> **Nota:** O SentinelFlux utiliza o Redis que já faz parte da stack padrão do Tenentis OS. Certifique‑se de que o serviço `redis` está rodando no `docker-compose` principal.
+
+## Simulando o Caos (Demonstração)
+Você pode testar a reatividade do sistema injetando falhas na API Vítima através de rotas ocultas de Chaos Engineering.
+
+**Disparar pico de lentidão:**
+```bash
+curl -X POST http://localhost:8080/chaos/inject-latency
+```
+O SentinelFlux detectará o aumento do percentil de latência em menos de 2 segundos e acionará o Docker SDK para subir uma nova réplica.
+
+**Disparar cascata de erros (Simular Deadlock):**
+```bash
+curl -X POST http://localhost:8080/chaos/inject-500
+```
+O sistema identificará a quebra do SLO de disponibilidade e reiniciará o container automaticamente.
+
+## Integração com o Tenentis OS
+O SentinelFlux foi projetado para ser um serviço adicional no ecossistema, conectando‑se aos seguintes pontos já existentes:
+- **Redis** compartilhado para mensageria.
+- **Workers Java** e **API Node.js** como alvos de monitoramento.
+- **Prometheus & Grafana** (opcional) para visualização histórica das métricas, enquanto o SentinelFlux trata a ação imediata.
+- **Kubernetes** (futuro) – o mesmo motor pode usar a API do Kubernetes em vez do Docker SDK para orquestrar ações em clusters.
+
+---
+
+# 🇺🇸 English Version
+
+## Overview
+**SentinelFlux** is the **reactive observability and self‑healing service** of the **Tenentis OS** ecosystem. Unlike traditional tools that persist metrics to disk for later analysis, it operates via **in‑memory Stream Processing**, analyzing telemetry in real time and orchestrating **automated recovery actions** on the infrastructure within milliseconds.
+
+This module is built to **drastically reduce MTTR** and apply **SRE and Active Resilience** concepts directly to Tenentis OS’s Java workers, API Gateway, or any other microservice.
+
+## How It Works (Architecture)
+The lifecycle of an event in SentinelFlux follows four continuous steps:
+
+1. **Target API (Victim)** – Monitored services (e.g., Tenentis OS Java workers, Node.js API) emit high‑frequency telemetry (latency, HTTP status, CPU) on every request.
+2. **Stream Engine (Ingestion)** – Data is published to low‑latency Redis streams, without touching disk.
+3. **Rule Engine (Processing)** – Analyzes the stream using sliding time windows. If metrics like P99 latency or error rate violate defined SLOs, an anomaly alert is triggered.
+4. **Orchestrator (Self‑Healing)** – Consumes alerts and programmatically interacts with infrastructure (Docker, Kubernetes) to perform corrective actions.
+
+```
+┌─────────────┐     ┌────────────────┐     ┌───────────────┐     ┌──────────────────┐
+│ Target API  │────▶│ Redis Streams  │────▶│  Rule Engine   │────▶│   Orchestrator   │
+│ (Victim)    │     │ (In‑memory)    │     │ (Sliding Windows)│    │ (Docker SDK)     │
+└─────────────┘     └────────────────┘     └───────────────┘     └──────────────────┘
+```
+
+## Tech Stack
+| Component          | Technology               | Purpose |
+|--------------------|---------------------------|---------|
+| Core / Services    | Go (Golang)               | High‑performance concurrent processing |
+| Stream Engine      | Redis (Streams & Pub/Sub) | Low‑latency event ingestion and routing |
+| Local infrastructure | Docker / Docker Compose | Container management |
+| Orchestration      | Docker Engine SDK         | Programmatic self‑healing actions (scale, restart) |
+
+## Self‑Healing Features
+- **Dynamic Scale‑Out** – Spins up additional application instances when prolonged latency limits or high CPU loads are detected.
+- **Smart Restart** – Gracefully restarts stalled containers when cascading 500 errors are detected (suggesting memory leaks or deadlocks).
+- **Load Shedding** – Drops non‑critical traffic in a controlled manner to protect database integrity and core system health during extreme spikes.
+
+## Getting Started (Quickstart)
+**Prerequisites:** Docker and Docker Compose installed.
+
+```bash
+# Clone the main Tenentis OS repository (if not already)
+git clone https://github.com/your-username/tenentis-os.git
+cd tenentis-os/sentinelflux
+
+# Start the SentinelFlux infrastructure
+docker-compose up -d
+```
+
+Check orchestrator logs:
+```bash
+docker logs -f sentinelflux-orchestrator
+```
+
+> **Note:** SentinelFlux reuses the Redis instance that is already part of the Tenentis OS stack. Make sure the `redis` service is running in the main `docker-compose`.
+
+## Chaos Engineering Demo
+You can test the system's reactivity by injecting faults into the Target API via hidden Chaos Engineering endpoints.
+
+**Trigger a latency spike:**
+```bash
+curl -X POST http://localhost:8080/chaos/inject-latency
+```
+SentinelFlux will detect the latency percentile increase in under 2 seconds and trigger the Docker SDK to spin up a new replica.
+
+**Trigger cascading errors (Simulate Deadlock):**
+```bash
+curl -X POST http://localhost:8080/chaos/inject-500
+```
+The system will identify the availability SLO breach and automatically restart the container.
+
+## Integration with Tenentis OS
+SentinelFlux is designed as an additional service within the ecosystem, connecting to:
+- The shared **Redis** for messaging.
+- **Java workers** and **Node.js API** as monitoring targets.
+- **Prometheus & Grafana** (optional) for historical metric visualization, while SentinelFlux handles immediate action.
+- **Kubernetes** (future) – the same engine can leverage the Kubernetes API instead of Docker SDK for cluster‑wide orchestration.
+
+---
+
+📄 **Documentação principal do Tenentis OS:** [README.md](../README.md)  
+📄 **Novas adições sugeridas:** [README-NOVAS-ADICOES.md](../README-NOVAS-ADICOES.md)  
+📄 **Licença:** MIT – mesma do Tenentis OS.
