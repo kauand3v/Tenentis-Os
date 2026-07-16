@@ -789,22 +789,6 @@ O **Tenentis OS** é uma arquitetura de backend multi-tenant de alta performance
 └───────────────────────────────────────────────────────────┘
 ```
 
-### Fluxo de Dados / Ciclo de Requisição
-
-```mermaid
-sequenceDiagram
-    participant Cliente
-    participant Middleware
-    participant ABAC
-    participant PostgreSQL
-    
-    Cliente->>Middleware: Requisição + JWT
-    Middleware->>Middleware: Validar Token
-    Middleware->>Middleware: Extrair tenant_id + escopo
-    Middleware->>PostgreSQL: SET app.current
-
-
-    ---
 
 #  SentinelFlux
 ## Observabilidade Reativa e Autocura para Microsserviços
