@@ -980,3 +980,120 @@ SentinelFlux is designed as an additional service within the ecosystem, connecti
 📄 **Documentação principal do Tenentis OS:** [README.md](../README.md)  
 📄 **Novas adições sugeridas:** [README-NOVAS-ADICOES.md](../README-NOVAS-ADICOES.md)  
 📄 **Licença:** MIT – mesma do Tenentis OS.
+
+---
+
+## 📄 Estrutura sugerida
+
+```
+conector-shopify/
+├── README.md          ← arquivo único com os dois idiomas
+├── src/
+├── ...
+```
+
+
+# Conector Shopify para Tenentis OS
+## Shopify Connector for Tenentis OS
+
+📑 **Idioma / Language**
+- [🇧🇷 Português](#versão-em-português)
+- [🇺🇸 English](#english-version)
+
+---
+
+## 🇧🇷 Versão em Português
+
+(Conteúdo completo em português: visão geral, como funciona, instalação, configuração, exemplos, etc.)
+
+---
+
+## 🇺🇸 English Version
+
+(Full content in English: overview, how it works, installation, configuration, examples, etc.)
+
+---
+
+## Exemplo preenchido (resumido)
+
+# Conector Shopify para Tenentis OS
+## Shopify Connector for Tenentis OS
+
+📑 **Idioma / Language**
+- [🇧🇷 Português](#-versão-em-português)
+- [🇺🇸 English](#-english-version)
+
+---
+
+## 🇧🇷 Versão em Português
+
+### Visão Geral
+O Conector Shopify importa pedidos automaticamente da sua loja Shopify para dentro do Tenentis OS, respeitando o isolamento por tenant. Os pedidos são mapeados para a entidade configurada no seu schema dinâmico.
+
+### Como Funciona
+1. Um webhook da Shopify notifica o conector sobre novos pedidos.
+2. O conector autentica usando credenciais configuradas por tenant.
+3. Os dados são transformados conforme o schema dinâmico do tenant.
+4. Os pedidos são inseridos na tabela principal do Tenentis OS, já filtrados pelo RLS.
+
+### Instalação
+```bash
+git clone https://github.com/seu-usuario/tenentis-shopify-connector.git
+cd tenentis-shopify-connector
+npm install
+```
+
+### Configuração
+Crie um arquivo `.env` baseado no `.env.example` e configure:
+- `SHOPIFY_API_KEY`
+- `SHOPIFY_API_SECRET`
+- `TENENTIS_API_URL`
+- `WEBHOOK_SECRET`
+
+...
+
+---
+
+## 🇺🇸 English Version
+
+### Overview
+The Shopify Connector automatically imports orders from your Shopify store into Tenentis OS, respecting tenant isolation. Orders are mapped to the entity configured in your dynamic schema.
+
+### How It Works
+1. A Shopify webhook notifies the connector about new orders.
+2. The connector authenticates using per-tenant credentials.
+3. Data is transformed according to the tenant's dynamic schema.
+4. Orders are inserted into Tenentis OS's main table, already filtered by RLS.
+
+### Installation
+```bash
+git clone https://github.com/your-username/tenentis-shopify-connector.git
+cd tenentis-shopify-connector
+npm install
+```
+
+### Configuration
+Copy `.env.example` to `.env` and set:
+- `SHOPIFY_API_KEY`
+- `SHOPIFY_API_SECRET`
+- `TENENTIS_API_URL`
+- `WEBHOOK_SECRET`
+
+
+
+---
+
+## Dicas importantes
+
+1. **Não repita o índice de seções em cada idioma** – o índice principal já aponta para as âncoras `#versão-em-português` e `#english-version`. Dentro de cada bloco, a estrutura pode ser idêntica (Visão Geral, Instalação…), porque o título do bloco já define o idioma.
+
+2. **Mantenha os títulos iguais nos dois idiomas** para facilitar a navegação (mas, claro, traduza os textos).
+
+3. **Use âncoras corretas** – o GitHub gera automaticamente âncoras com base nos títulos. Para títulos com emojis, é melhor usar links explícitos como `(#versão-em-português)` (minúsculo, sem acentos, hífens). No exemplo acima, já fiz isso.
+
+4. **Arquivo único é suficiente** – não precisa separar em `README.pt.md` e `README.en.md`, a menos que você prefira manter arquivos diferentes e usar links entre eles. O modelo de seções duplas é mais simples e comum.
+
+5. **No README principal do Tenentis OS**, você pode referenciar o conector assim:
+
+## 🔌 Extensões e Conectores
+- [Conector Shopify](https://github.com/seu-usuario/tenentis-shopify-connector) – importa pedidos automaticamente (projeto independente, com README bilíngue)
